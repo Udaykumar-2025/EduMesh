@@ -1,10 +1,8 @@
 const express = require('express');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
-const { supabase } = require('../config/database');
-const { sendOTP, verifyOTP } = require('../services/otpService');
+const authController = require('../controllers/authController');
 const router = express.Router();
+const { authenticateToken } = require('../middleware/auth');
 
 /**
  * @swagger
@@ -31,34 +29,7 @@ const router = express.Router();
 router.post('/send-otp', [
   body('contact').notEmpty().withMessage('Contact is required'),
   body('method').isIn(['phone', 'email']).withMessage('Method must be phone or email')
-], async (req, res) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation failed',
-        errors: errors.array()
-      });
-    }
-
-    const { contact, method } = req.body;
-    
-    // Send OTP
-    const otpResult = await sendOTP(contact, method);
-    
-    res.json({
-      success: true,
-      message: 'OTP sent successfully',
-      data: { otpId: otpResult.otpId }
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
-  }
-});
+], authController.sendOTP);
 
 /**
  * @swagger
@@ -88,50 +59,7 @@ router.post('/verify-otp', [
   body('contact').notEmpty().withMessage('Contact is required'),
   body('otp').isLength({ min: 6, max: 6 }).withMessage('OTP must be 6 digits'),
   body('method').isIn(['phone', 'email']).withMessage('Method must be phone or email')
-], async (req, res) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation failed',
-        errors: errors.array()
-      });
-    }
-
-    const { contact, otp, method } = req.body;
-    
-    // Verify OTP
-    const isValid = await verifyOTP(contact, otp);
-    if (!isValid) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid or expired OTP'
-      });
-    }
-
-    // Check if user exists
-    const { data: existingUser } = await supabase
-      .from('users')
-      .select('*')
-      .or(method === 'email' ? `email.eq.${contact}` : `phone.eq.${contact}`)
-      .single();
-
-    res.json({
-      success: true,
-      message: 'OTP verified successfully',
-      data: {
-        userExists: !!existingUser,
-        user: existingUser || null
-      }
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
-  }
-});
+], authController.verifyOTP);
 
 /**
  * @swagger
@@ -167,137 +95,7 @@ router.post('/register', [
   body('name').notEmpty().withMessage('Name is required'),
   body('email').isEmail().withMessage('Valid email is required'),
   body('role').isIn(['admin', 'teacher', 'parent', 'student']).withMessage('Invalid role'),
-], async (req, res) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation failed',
-        errors: errors.array()
-      });
-    }
-
-    const { name, email, phone, role, schoolCode, schoolName } = req.body;
-    let schoolId;
-
-    // Handle school logic
-    if (role === 'admin') {
-      if (schoolCode) {
-        // Join existing school
-        const { data: school, error } = await supabase
-          .from('schools')
-          .select('id')
-          .eq('code', schoolCode)
-          .single();
-
-        if (error || !school) {
-          return res.status(400).json({
-            success: false,
-            message: 'Invalid school code'
-          });
-        }
-        schoolId = school.id;
-      } else if (schoolName) {
-        // Create new school
-        const schoolCode = `SCH${Date.now()}`;
-        const { data: newSchool, error } = await supabase
-          .from('schools')
-          .insert({
-            name: schoolName,
-            code: schoolCode,
-            region: 'Default Region',
-            admin_email: email
-          })
-          .select()
-          .single();
-
-        if (error) {
-          return res.status(400).json({
-            success: false,
-            message: 'Failed to create school'
-          });
-        }
-        schoolId = newSchool.id;
-      }
-    } else {
-      // Non-admin users must provide school code
-      if (!schoolCode) {
-        return res.status(400).json({
-          success: false,
-          message: 'School code is required'
-        });
-      }
-
-      const { data: school, error } = await supabase
-        .from('schools')
-        .select('id')
-        .eq('code', schoolCode)
-        .single();
-
-      if (error || !school) {
-        return res.status(400).json({
-          success: false,
-          message: 'Invalid school code'
-        });
-      }
-      schoolId = school.id;
-    }
-
-    // Create user
-    const { data: user, error: userError } = await supabase
-      .from('users')
-      .insert({
-        name,
-        email,
-        phone,
-        role,
-        school_id: schoolId,
-        is_active: true
-      })
-      .select()
-      .single();
-
-    if (userError) {
-      return res.status(400).json({
-        success: false,
-        message: 'Failed to create user'
-      });
-    }
-
-    // Generate JWT token
-    const token = jwt.sign(
-      { 
-        userId: user.id, 
-        schoolId: user.school_id, 
-        role: user.role 
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
-
-    res.status(201).json({
-      success: true,
-      message: 'User registered successfully',
-      data: {
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          phone: user.phone,
-          role: user.role,
-          schoolId: user.school_id
-        },
-        token
-      }
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
-  }
-});
+], authController.register);
 
 /**
  * @swagger
@@ -324,72 +122,51 @@ router.post('/register', [
 router.post('/login', [
   body('contact').notEmpty().withMessage('Contact is required'),
   body('method').isIn(['phone', 'email']).withMessage('Method must be phone or email')
-], async (req, res) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation failed',
-        errors: errors.array()
-      });
-    }
+], authController.login);
 
-    const { contact, method } = req.body;
+/**
+ * @swagger
+ * /api/auth/refresh:
+ *   post:
+ *     summary: Refresh access token
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               refreshToken:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Token refreshed successfully
+ */
+router.post('/refresh', authController.refreshToken);
 
-    // Find user
-    const { data: user, error } = await supabase
-      .from('users')
-      .select('*')
-      .or(method === 'email' ? `email.eq.${contact}` : `phone.eq.${contact}`)
-      .eq('is_active', true)
-      .single();
+/**
+ * @swagger
+ * /api/auth/logout:
+ *   post:
+ *     summary: Logout user
+ *     tags: [Authentication]
+ *     responses:
+ *       200:
+ *         description: Logged out successfully
+ */
+router.post('/logout', authenticateToken, authController.logout);
 
-    if (error || !user) {
-      return res.status(401).json({
-        success: false,
-        message: 'User not found'
-      });
-    }
-
-    // Update last login
-    await supabase
-      .from('users')
-      .update({ last_login: new Date().toISOString() })
-      .eq('id', user.id);
-
-    // Generate JWT token
-    const token = jwt.sign(
-      { 
-        userId: user.id, 
-        schoolId: user.school_id, 
-        role: user.role 
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
-
-    res.json({
-      success: true,
-      message: 'Login successful',
-      data: {
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          phone: user.phone,
-          role: user.role,
-          schoolId: user.school_id
-        },
-        token
-      }
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
-  }
-});
+/**
+ * @swagger
+ * /api/auth/profile:
+ *   get:
+ *     summary: Get current user profile
+ *     tags: [Authentication]
+ *     responses:
+ *       200:
+ *         description: User profile
+ */
+router.get('/profile', authenticateToken, authController.getProfile);
 
 module.exports = router;
