@@ -7,6 +7,7 @@ const swaggerJsdoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
 const { createServer } = require('http');
 const { Server } = require('socket.io');
+require('dotenv').config();
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -191,9 +192,14 @@ app.use('*', (req, res) => {
 
 const PORT = process.env.PORT || 3001;
 
+console.log('🚀 Starting EduMesh API Server...');
+console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+console.log(`🔧 Port: ${PORT}`);
+
 server.listen(PORT, () => {
   console.log(`🚀 EduMesh API Server running on port ${PORT}`);
   console.log(`📚 API Documentation available at http://localhost:${PORT}/api-docs`);
+  console.log(`🏥 Health Check: http://localhost:${PORT}/health`);
 });
 
 module.exports = app;
