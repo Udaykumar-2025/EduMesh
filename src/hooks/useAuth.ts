@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { apiService } from '../services/api';
 import { User } from '../types';
 
 export function useAuth() {
@@ -6,22 +7,49 @@ export function useAuth() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check for existing user session
-    const savedUser = localStorage.getItem('edumesh_user');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
-    setIsLoading(false);
+    const initializeAuth = async () => {
+      const token = localStorage.getItem('edumesh_token');
+      if (token) {
+        try {
+          const response = await apiService.getProfile();
+          if (response.success && response.data) {
+            const userData: User = {
+              id: response.data.id,
+              name: response.data.name,
+              email: response.data.email,
+              phone: response.data.phone,
+              role: response.data.role,
+              schoolId: response.data.school_id,
+              avatar: response.data.avatar_url
+            };
+            setUser(userData);
+          }
+        } catch (error) {
+          console.error('Failed to load user profile:', error);
+          // Clear invalid token
+          apiService.clearToken();
+        }
+      }
+      setIsLoading(false);
+    };
+
+    initializeAuth();
   }, []);
 
-  const login = (userData: User) => {
+  const login = async (userData: User) => {
     setUser(userData);
     localStorage.setItem('edumesh_user', JSON.stringify(userData));
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('edumesh_user');
+  const logout = async () => {
+    try {
+      await apiService.logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      setUser(null);
+      localStorage.removeItem('edumesh_user');
+    }
   };
 
   return { user, isLoading, login, logout };

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, CheckCircle } from 'lucide-react';
+import { apiService } from '../../services/api';
 
 interface OTPScreenProps {
   contact: string;
@@ -12,6 +13,8 @@ export default function OTPScreen({ contact, method, onVerify, onBack }: OTPScre
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [timer, setTimer] = useState(30);
   const [canResend, setCanResend] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     if (timer > 0) {
@@ -38,10 +41,32 @@ export default function OTPScreen({ contact, method, onVerify, onBack }: OTPScre
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (otp.every(digit => digit !== '')) {
+    if (!otp.every(digit => digit !== '')) return;
+
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const otpString = otp.join('');
+      await apiService.verifyOTP(contact, otpString, method);
       onVerify();
+    } catch (error: any) {
+      setError(error.message || 'Invalid OTP');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    try {
+      await apiService.sendOTP(contact, method);
+      setTimer(30);
+      setCanResend(false);
+      setError('');
+    } catch (error: any) {
+      setError(error.message || 'Failed to resend OTP');
     }
   };
 
@@ -84,18 +109,22 @@ export default function OTPScreen({ contact, method, onVerify, onBack }: OTPScre
                     maxLength={1}
                     value={digit}
                     onChange={(e) => handleOtpChange(index, e.target.value)}
+                    disabled={isLoading}
                     className="w-12 h-12 text-center text-lg font-semibold bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-white/50 backdrop-blur-sm"
                   />
                 ))}
               </div>
+              {error && (
+                <p className="mt-2 text-sm text-red-200 text-center">{error}</p>
+              )}
             </div>
 
             <button
               type="submit"
-              disabled={!isComplete}
+              disabled={!isComplete || isLoading}
               className="w-full bg-white text-blue-600 py-3 px-4 rounded-lg font-semibold hover:bg-blue-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-105"
             >
-              Verify Code
+              {isLoading ? 'Verifying...' : 'Verify Code'}
             </button>
           </form>
 
@@ -104,10 +133,7 @@ export default function OTPScreen({ contact, method, onVerify, onBack }: OTPScre
               Didn't receive the code?{' '}
               {canResend ? (
                 <button
-                  onClick={() => {
-                    setTimer(30);
-                    setCanResend(false);
-                  }}
+                  onClick={handleResend}
                   className="text-white font-medium hover:underline"
                 >
                   Resend

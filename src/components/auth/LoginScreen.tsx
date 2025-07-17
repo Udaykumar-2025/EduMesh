@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Mail, Phone, ArrowRight } from 'lucide-react';
+import { apiService } from '../../services/api';
 
 interface LoginScreenProps {
   onLogin: (phone: string, method: 'phone' | 'email') => void;
@@ -8,11 +9,23 @@ interface LoginScreenProps {
 export default function LoginScreen({ onLogin }: LoginScreenProps) {
   const [method, setMethod] = useState<'phone' | 'email'>('phone');
   const [value, setValue] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (value.trim()) {
+    if (!value.trim()) return;
+
+    setIsLoading(true);
+    setError('');
+
+    try {
+      await apiService.sendOTP(value, method);
       onLogin(value, method);
+    } catch (error: any) {
+      setError(error.message || 'Failed to send OTP');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -64,17 +77,27 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
                 placeholder={method === 'email' ? 'Enter your email' : 'Enter your phone number'}
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
+                disabled={isLoading}
                 className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-blue-200 focus:outline-none focus:ring-2 focus:ring-white/50 backdrop-blur-sm"
               />
+              {error && (
+                <p className="mt-2 text-sm text-red-200">{error}</p>
+              )}
             </div>
 
             <button
               type="submit"
-              disabled={!value.trim()}
+              disabled={!value.trim() || isLoading}
               className="w-full bg-white text-blue-600 py-3 px-4 rounded-lg font-semibold flex items-center justify-center space-x-2 hover:bg-blue-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-105"
             >
-              <span>Continue</span>
-              <ArrowRight size={18} />
+              {isLoading ? (
+                <span>Sending OTP...</span>
+              ) : (
+                <>
+                  <span>Continue</span>
+                  <ArrowRight size={18} />
+                </>
+              )}
             </button>
           </form>
 
