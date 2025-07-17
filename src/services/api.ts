@@ -319,6 +319,16 @@ class ApiService {
     return this.request(`/api/users${queryString}`);
   }
 
+  async createUser(userData: {
+    name: string;
+    email: string;
+    phone: string;
+    role: string;
+    schoolCode?: string;
+  }) {
+    return this.register(userData);
+  }
+
   async updateProfile(profileData: {
     name?: string;
     phone?: string;

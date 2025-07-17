@@ -1,8 +1,12 @@
 import React from 'react';
-import { Users, GraduationCap, BookOpen, TrendingUp, Calendar, AlertCircle } from 'lucide-react';
+import { Users, GraduationCap, BookOpen, TrendingUp, Calendar, AlertCircle, UserPlus } from 'lucide-react';
 import Card from '../shared/Card';
 
-export default function AdminDashboard() {
+interface AdminDashboardProps {
+  onNavigate: (view: string) => void;
+}
+
+export default function AdminDashboard({ onNavigate }: AdminDashboardProps) {
   const stats = [
     { title: 'Total Teachers', value: '24', icon: Users, color: 'bg-blue-500', change: '+2 this month' },
     { title: 'Total Students', value: '486', icon: GraduationCap, color: 'bg-green-500', change: '+12 this month' },
@@ -107,14 +111,14 @@ export default function AdminDashboard() {
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: 'Add Teacher', icon: Users, color: 'bg-blue-500' },
-            { label: 'Create Class', icon: BookOpen, color: 'bg-green-500' },
+            { label: 'Manage Users', icon: UserPlus, color: 'bg-blue-500', action: () => onNavigate('manage-users') },
+            { label: 'Create Class', icon: BookOpen, color: 'bg-green-500', action: () => {} },
             { label: 'Schedule Exam', icon: Calendar, color: 'bg-purple-500' },
             { label: 'View Reports', icon: TrendingUp, color: 'bg-orange-500' }
           ].map((action, index) => {
             const Icon = action.icon;
             return (
-              <Card key={index} hover className="p-4 text-center">
+              <Card key={index} hover className="p-4 text-center" onClick={action.action}>
                 <div className={`w-12 h-12 ${action.color} rounded-lg mx-auto mb-3 flex items-center justify-center`}>
                   <Icon className="text-white" size={20} />
                 </div>
