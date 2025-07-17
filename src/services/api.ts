@@ -5,7 +5,7 @@ class ApiService {
   private token: string | null = null;
 
   constructor() {
-    this.baseURL = API_BASE_URL;
+    this.baseURL = API_BASE_URL.replace('https://localhost', 'http://localhost');
     this.token = localStorage.getItem('edumesh_token');
   }
 
