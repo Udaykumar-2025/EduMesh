@@ -38,7 +38,10 @@ export function useAuth() {
 
   const login = async (userData: User) => {
     setUser(userData);
+    // Store user data for demo purposes
     localStorage.setItem('edumesh_user', JSON.stringify(userData));
+    // Set a dummy token for API calls
+    localStorage.setItem('edumesh_token', 'demo_token_' + userData.role);
   };
 
   const logout = async () => {
@@ -49,6 +52,7 @@ export function useAuth() {
     } finally {
       setUser(null);
       localStorage.removeItem('edumesh_user');
+      localStorage.removeItem('edumesh_token');
     }
   };
 
