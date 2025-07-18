@@ -8,23 +8,25 @@ interface AdminDashboardProps {
 
 export default function AdminDashboard({ onNavigate }: AdminDashboardProps) {
   const stats = [
-    { title: 'Total Teachers', value: '24', icon: Users, color: 'bg-blue-500', change: '+2 this month' },
-    { title: 'Total Students', value: '486', icon: GraduationCap, color: 'bg-green-500', change: '+12 this month' },
-    { title: 'Active Classes', value: '18', icon: BookOpen, color: 'bg-purple-500', change: '3 ongoing' },
-    { title: 'Attendance Rate', value: '94%', icon: TrendingUp, color: 'bg-orange-500', change: '+2% vs last month' }
+    { title: 'Total Teachers', value: '12', icon: Users, color: 'bg-blue-500', change: '+2 this month' },
+    { title: 'Total Students', value: '248', icon: GraduationCap, color: 'bg-green-500', change: '+8 this month' },
+    { title: 'Active Classes', value: '15', icon: BookOpen, color: 'bg-purple-500', change: '5 ongoing' },
+    { title: 'Attendance Rate', value: '96%', icon: TrendingUp, color: 'bg-orange-500', change: '+3% vs last month' }
   ];
 
   const recentActivities = [
-    { action: 'New teacher registered', user: 'Sarah Johnson', time: '2 hours ago', type: 'teacher' },
-    { action: 'Class schedule updated', user: 'Michael Chen', time: '4 hours ago', type: 'schedule' },
-    { action: 'Exam scheduled', user: 'Emily Rodriguez', time: '6 hours ago', type: 'exam' },
-    { action: 'Student enrolled', user: 'Alex Thompson', time: '1 day ago', type: 'student' }
+    { action: 'New student enrolled', user: 'Sophie Chen', time: '1 hour ago', type: 'student' },
+    { action: 'Teacher profile updated', user: 'Sarah Johnson', time: '3 hours ago', type: 'teacher' },
+    { action: 'Homework assigned', user: 'Michael Rodriguez', time: '5 hours ago', type: 'schedule' },
+    { action: 'Exam results published', user: 'Emily Foster', time: '8 hours ago', type: 'exam' },
+    { action: 'New parent registered', user: 'David Kim', time: '1 day ago', type: 'student' }
   ];
 
   const upcomingEvents = [
-    { title: 'Parent-Teacher Meeting', date: 'Jan 25, 2025', time: '2:00 PM' },
-    { title: 'Science Fair', date: 'Feb 1, 2025', time: '10:00 AM' },
-    { title: 'Annual Sports Day', date: 'Feb 15, 2025', time: '9:00 AM' }
+    { title: 'Parent-Teacher Conference', date: 'Jan 28, 2025', time: '2:00 PM' },
+    { title: 'Mathematics Olympiad', date: 'Feb 5, 2025', time: '10:00 AM' },
+    { title: 'Science Exhibition', date: 'Feb 12, 2025', time: '9:00 AM' },
+    { title: 'Annual Sports Meet', date: 'Feb 20, 2025', time: '8:00 AM' }
   ];
 
   return (

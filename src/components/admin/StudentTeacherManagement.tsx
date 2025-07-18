@@ -40,7 +40,15 @@ export default function StudentTeacherManagement({ onBack }: StudentTeacherManag
   const [editingItem, setEditingItem] = useState<Student | Teacher | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [subjects, setSubjects] = useState<any[]>([]);
+  const [subjects, setSubjects] = useState<any[]>([
+    { id: '1', name: 'Mathematics', code: 'MATH' },
+    { id: '2', name: 'English', code: 'ENG' },
+    { id: '3', name: 'Science', code: 'SCI' },
+    { id: '4', name: 'History', code: 'HIST' },
+    { id: '5', name: 'Physics', code: 'PHY' },
+    { id: '6', name: 'Chemistry', code: 'CHEM' },
+    { id: '7', name: 'Biology', code: 'BIO' }
+  ]);
 
   // Form states
   const [studentForm, setStudentForm] = useState<Student>({
@@ -67,138 +75,172 @@ export default function StudentTeacherManagement({ onBack }: StudentTeacherManag
   });
 
   useEffect(() => {
-    loadData();
-    loadSubjects();
+    loadDummyData();
   }, []);
 
-  const loadData = async () => {
+  const loadDummyData = () => {
     setIsLoading(true);
-    try {
-      // Load students and teachers from API
-      const [studentsRes, teachersRes] = await Promise.all([
-        apiService.getUsers({ role: 'student' }),
-        apiService.getUsers({ role: 'teacher' })
-      ]);
+    
+    // Add dummy students
+    const dummyStudents: Student[] = [
+      {
+        id: '1',
+        name: 'Alex Thompson',
+        email: 'alex.thompson@school.edu',
+        phone: '+1-555-0301',
+        student_id: 'S001',
+        class_name: '10A',
+        roll_number: '001',
+        date_of_birth: '2008-05-15',
+        parent_name: 'John Thompson',
+        parent_email: 'john.thompson@parent.com',
+        parent_phone: '+1-555-0201'
+      },
+      {
+        id: '2',
+        name: 'Emma Wilson',
+        email: 'emma.wilson@school.edu',
+        phone: '+1-555-0302',
+        student_id: 'S002',
+        class_name: '10A',
+        roll_number: '002',
+        date_of_birth: '2008-08-22',
+        parent_name: 'Lisa Wilson',
+        parent_email: 'lisa.wilson@parent.com',
+        parent_phone: '+1-555-0202'
+      },
+      {
+        id: '3',
+        name: 'James Davis',
+        email: 'james.davis@school.edu',
+        phone: '+1-555-0303',
+        student_id: 'S003',
+        class_name: '10B',
+        roll_number: '001',
+        date_of_birth: '2008-03-10',
+        parent_name: 'David Davis',
+        parent_email: 'david.davis@parent.com',
+        parent_phone: '+1-555-0203'
+      },
+      {
+        id: '4',
+        name: 'Sophie Chen',
+        email: 'sophie.chen@school.edu',
+        phone: '+1-555-0304',
+        student_id: 'S004',
+        class_name: '11A',
+        roll_number: '001',
+        date_of_birth: '2007-12-05',
+        parent_name: 'Michael Chen',
+        parent_email: 'michael.chen@parent.com',
+        parent_phone: '+1-555-0204'
+      }
+    ];
 
-      if (studentsRes.success) {
-        setStudents(studentsRes.data || []);
+    // Add dummy teachers
+    const dummyTeachers: Teacher[] = [
+      {
+        id: '1',
+        name: 'Sarah Johnson',
+        email: 'sarah.johnson@school.edu',
+        phone: '+1-555-0101',
+        employee_id: 'T001',
+        qualification: 'M.Sc Mathematics',
+        experience_years: 8,
+        subjects: ['1', '5'] // Math and Physics
+      },
+      {
+        id: '2',
+        name: 'Michael Rodriguez',
+        email: 'michael.rodriguez@school.edu',
+        phone: '+1-555-0102',
+        employee_id: 'T002',
+        qualification: 'M.A English Literature',
+        experience_years: 6,
+        subjects: ['2'] // English
+      },
+      {
+        id: '3',
+        name: 'Emily Foster',
+        email: 'emily.foster@school.edu',
+        phone: '+1-555-0103',
+        employee_id: 'T003',
+        qualification: 'M.Sc Biology',
+        experience_years: 5,
+        subjects: ['3', '6', '7'] // Science, Chemistry, Biology
+      },
+      {
+        id: '4',
+        name: 'Robert Kim',
+        email: 'robert.kim@school.edu',
+        phone: '+1-555-0104',
+        employee_id: 'T004',
+        qualification: 'M.A History',
+        experience_years: 12,
+        subjects: ['4'] // History
       }
-      if (teachersRes.success) {
-        setTeachers(teachersRes.data || []);
-      }
-    } catch (error) {
-      console.error('Failed to load data:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    ];
 
-  const loadSubjects = async () => {
-    try {
-      const response = await apiService.getSubjects();
-      if (response.success) {
-        setSubjects(response.data || []);
-      }
-    } catch (error) {
-      console.error('Failed to load subjects:', error);
-    }
+    setStudents(dummyStudents);
+    setTeachers(dummyTeachers);
+    setIsLoading(false);
   };
 
   const handleAddStudent = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     
-    try {
-      // First create parent user if provided
-      let parentId = null;
-      if (studentForm.parent_name && studentForm.parent_email) {
-        const parentData = {
-          name: studentForm.parent_name,
-          email: studentForm.parent_email,
-          phone: studentForm.parent_phone || '',
-          role: 'parent',
-          schoolCode: 'GHS001' // Demo school code
-        };
-        
-        const parentResponse = await apiService.register(parentData);
-        if (parentResponse.success) {
-          parentId = parentResponse.data.user.id;
-        }
-      }
-
-      // Create student user
-      const studentUserData = {
-        name: studentForm.name,
-        email: studentForm.email,
-        phone: studentForm.phone,
-        role: 'student',
-        schoolCode: 'GHS001' // Demo school code
-      };
-
-      const userResponse = await apiService.register(studentUserData);
-      if (userResponse.success) {
-        // Create student record
-        const studentData = {
-          user_id: userResponse.data.user.id,
-          student_id: studentForm.student_id,
-          class_name: studentForm.class_name,
-          roll_number: studentForm.roll_number,
-          date_of_birth: studentForm.date_of_birth,
-          parent_id: parentId
-        };
-
-        // In a real app, you'd have a separate endpoint for creating student records
-        // For demo, we'll just add to local state
-        const newStudent = {
-          ...studentForm,
-          id: userResponse.data.user.id
-        };
-        
-        setStudents([...students, newStudent]);
-        setShowAddForm(false);
-        resetStudentForm();
-        
-        alert('Student added successfully!');
-      }
-    } catch (error: any) {
-      alert(`Failed to add student: ${error.message}`);
-    } finally {
-      setIsLoading(false);
+    // Validate required fields
+    if (!studentForm.name || !studentForm.email || !studentForm.student_id || 
+        !studentForm.class_name || !studentForm.roll_number) {
+      alert('Please fill in all required fields');
+      return;
     }
+
+    // Check for duplicate student ID
+    if (students.some(s => s.student_id === studentForm.student_id)) {
+      alert('Student ID already exists');
+      return;
+    }
+
+    // Add new student to the list
+    const newStudent: Student = {
+      ...studentForm,
+      id: Date.now().toString() // Simple ID generation for demo
+    };
+    
+    setStudents([...students, newStudent]);
+    setShowAddForm(false);
+    resetStudentForm();
+    
+    alert('Student added successfully!');
   };
 
   const handleAddTeacher = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     
-    try {
-      const teacherUserData = {
-        name: teacherForm.name,
-        email: teacherForm.email,
-        phone: teacherForm.phone,
-        role: 'teacher',
-        schoolCode: 'GHS001' // Demo school code
-      };
-
-      const userResponse = await apiService.register(teacherUserData);
-      if (userResponse.success) {
-        // In a real app, you'd create teacher record with subjects
-        const newTeacher = {
-          ...teacherForm,
-          id: userResponse.data.user.id
-        };
-        
-        setTeachers([...teachers, newTeacher]);
-        setShowAddForm(false);
-        resetTeacherForm();
-        
-        alert('Teacher added successfully!');
-      }
-    } catch (error: any) {
-      alert(`Failed to add teacher: ${error.message}`);
-    } finally {
-      setIsLoading(false);
+    // Validate required fields
+    if (!teacherForm.name || !teacherForm.email || !teacherForm.employee_id) {
+      alert('Please fill in all required fields');
+      return;
     }
+
+    // Check for duplicate employee ID
+    if (teachers.some(t => t.employee_id === teacherForm.employee_id)) {
+      alert('Employee ID already exists');
+      return;
+    }
+
+    // Add new teacher to the list
+    const newTeacher: Teacher = {
+      ...teacherForm,
+      id: Date.now().toString() // Simple ID generation for demo
+    };
+    
+    setTeachers([...teachers, newTeacher]);
+    setShowAddForm(false);
+    resetTeacherForm();
+    
+    alert('Teacher added successfully!');
   };
 
   const resetStudentForm = () => {
@@ -353,6 +395,9 @@ export default function StudentTeacherManagement({ onBack }: StudentTeacherManag
                 <p>ID: {teacher.employee_id}</p>
                 <p>Experience: {teacher.experience_years} years</p>
                 <p>Qualification: {teacher.qualification}</p>
+                <p>Subjects: {teacher.subjects.map(subjectId => 
+                  subjects.find(s => s.id === subjectId)?.name
+                ).filter(Boolean).join(', ')}</p>
               </div>
             </Card>
           ))}
@@ -525,7 +570,7 @@ export default function StudentTeacherManagement({ onBack }: StudentTeacherManag
                       className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
                     >
                       <Save size={16} />
-                      <span>{isLoading ? 'Adding...' : 'Add Student'}</span>
+                      <span>Add Student</span>
                     </button>
                   </div>
                 </form>
@@ -649,7 +694,7 @@ export default function StudentTeacherManagement({ onBack }: StudentTeacherManag
                       className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
                     >
                       <Save size={16} />
-                      <span>{isLoading ? 'Adding...' : 'Add Teacher'}</span>
+                      <span>Add Teacher</span>
                     </button>
                   </div>
                 </form>
