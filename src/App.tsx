@@ -8,6 +8,7 @@ import AdminDashboard from './components/admin/AdminDashboard';
 import TeacherSchedule from './components/teacher/TeacherSchedule';
 import ParentDashboard from './components/parent/ParentDashboard';
 import StudentTeacherManagement from './components/admin/StudentTeacherManagement';
+import AttendanceCapture from './components/teacher/AttendanceCapture';
 import { User } from './types';
 
 // Dummy users for quick demo login
@@ -191,7 +192,14 @@ function App() {
     } else {
       switch (user?.role) {
         case 'teacher':
-          return <TeacherSchedule />;
+          switch (currentView) {
+            case 'dashboard':
+              return <TeacherSchedule onNavigate={setCurrentView} />;
+            case 'attendance':
+              return <AttendanceCapture onBack={() => setCurrentView('dashboard')} />;
+            default:
+              return <TeacherSchedule onNavigate={setCurrentView} />;
+          }
         case 'parent':
           return <ParentDashboard />;
         case 'student':

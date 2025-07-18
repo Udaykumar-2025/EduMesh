@@ -3,7 +3,11 @@ import { Clock, MapPin, Users } from 'lucide-react';
 import Card from '../shared/Card';
 import { mockClasses } from '../../data/mockData';
 
-export default function TeacherSchedule() {
+interface TeacherScheduleProps {
+  onNavigate?: (view: string) => void;
+}
+
+export default function TeacherSchedule({ onNavigate }: TeacherScheduleProps) {
   const todaysClasses = mockClasses.filter(cls => cls.day === 'Monday');
 
   const getStatusColor = (status: string) => {
@@ -82,7 +86,7 @@ export default function TeacherSchedule() {
                 
                 <div className="flex space-x-2">
                   <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
-                    Take Attendance
+                    <span onClick={() => onNavigate?.('attendance')}>Take Attendance</span>
                   </button>
                   <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium">
                     Assign Homework
