@@ -1,35 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Plus, Users, GraduationCap, Search, Edit, Trash2, Save, X } from 'lucide-react';
+import { ArrowLeft, Plus, Users, GraduationCap, Search, Edit, Trash2, Save, X, Upload } from 'lucide-react';
 import Card from '../shared/Card';
-import { apiService } from '../../services/api';
+import { dbOperations, Student, Teacher } from '../../lib/supabase';
+import BulkUpload from './BulkUpload';
 
 interface StudentTeacherManagementProps {
   onBack: () => void;
-}
-
-interface Student {
-  id?: string;
-  name: string;
-  email: string;
-  phone: string;
-  student_id: string;
-  class_name: string;
-  roll_number: string;
-  date_of_birth: string;
-  parent_name?: string;
-  parent_email?: string;
-  parent_phone?: string;
-}
-
-interface Teacher {
-  id?: string;
-  name: string;
-  email: string;
-  phone: string;
-  employee_id: string;
-  qualification: string;
-  experience_years: number;
-  subjects: string[];
 }
 
 export default function StudentTeacherManagement({ onBack }: StudentTeacherManagementProps) {
@@ -37,9 +13,11 @@ export default function StudentTeacherManagement({ onBack }: StudentTeacherManag
   const [students, setStudents] = useState<Student[]>([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showBulkUpload, setShowBulkUpload] = useState(false);
   const [editingItem, setEditingItem] = useState<Student | Teacher | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const schoolId = '550e8400-e29b-41d4-a716-446655440000'; // Demo school ID
   const [subjects, setSubjects] = useState<any[]>([
     { id: '1', name: 'Mathematics', code: 'MATH' },
     { id: '2', name: 'English', code: 'ENG' },
@@ -52,9 +30,10 @@ export default function StudentTeacherManagement({ onBack }: StudentTeacherManag
 
   // Form states
   const [studentForm, setStudentForm] = useState<Student>({
+    school_id: schoolId,
     name: '',
     email: '',
-    phone: '',
+    phone: undefined,
     student_id: '',
     class_name: '',
     roll_number: '',
@@ -65,132 +44,71 @@ export default function StudentTeacherManagement({ onBack }: StudentTeacherManag
   });
 
   const [teacherForm, setTeacherForm] = useState<Teacher>({
+    school_id: schoolId,
     name: '',
     email: '',
-    phone: '',
+    phone: undefined,
     employee_id: '',
-    qualification: '',
-    experience_years: 0,
+    qualification: undefined,
+    experience_years: undefined,
     subjects: []
   });
 
   useEffect(() => {
-    loadDummyData();
+    loadData();
   }, []);
 
-  const loadDummyData = () => {
+  const loadData = async () => {
     setIsLoading(true);
-    
-    // Add dummy students
-    const dummyStudents: Student[] = [
-      {
-        id: '1',
-        name: 'Alex Thompson',
-        email: 'alex.thompson@school.edu',
-        phone: '+1-555-0301',
-        student_id: 'S001',
-        class_name: '10A',
-        roll_number: '001',
-        date_of_birth: '2008-05-15',
-        parent_name: 'John Thompson',
-        parent_email: 'john.thompson@parent.com',
-        parent_phone: '+1-555-0201'
-      },
-      {
-        id: '2',
-        name: 'Emma Wilson',
-        email: 'emma.wilson@school.edu',
-        phone: '+1-555-0302',
-        student_id: 'S002',
-        class_name: '10A',
-        roll_number: '002',
-        date_of_birth: '2008-08-22',
-        parent_name: 'Lisa Wilson',
-        parent_email: 'lisa.wilson@parent.com',
-        parent_phone: '+1-555-0202'
-      },
-      {
-        id: '3',
-        name: 'James Davis',
-        email: 'james.davis@school.edu',
-        phone: '+1-555-0303',
-        student_id: 'S003',
-        class_name: '10B',
-        roll_number: '001',
-        date_of_birth: '2008-03-10',
-        parent_name: 'David Davis',
-        parent_email: 'david.davis@parent.com',
-        parent_phone: '+1-555-0203'
-      },
-      {
-        id: '4',
-        name: 'Sophie Chen',
-        email: 'sophie.chen@school.edu',
-        phone: '+1-555-0304',
-        student_id: 'S004',
-        class_name: '11A',
-        roll_number: '001',
-        date_of_birth: '2007-12-05',
-        parent_name: 'Michael Chen',
-        parent_email: 'michael.chen@parent.com',
-        parent_phone: '+1-555-0204'
-      }
-    ];
-
-    // Add dummy teachers
-    const dummyTeachers: Teacher[] = [
-      {
-        id: '1',
-        name: 'Sarah Johnson',
-        email: 'sarah.johnson@school.edu',
-        phone: '+1-555-0101',
-        employee_id: 'T001',
-        qualification: 'M.Sc Mathematics',
-        experience_years: 8,
-        subjects: ['1', '5'] // Math and Physics
-      },
-      {
-        id: '2',
-        name: 'Michael Rodriguez',
-        email: 'michael.rodriguez@school.edu',
-        phone: '+1-555-0102',
-        employee_id: 'T002',
-        qualification: 'M.A English Literature',
-        experience_years: 6,
-        subjects: ['2'] // English
-      },
-      {
-        id: '3',
-        name: 'Emily Foster',
-        email: 'emily.foster@school.edu',
-        phone: '+1-555-0103',
-        employee_id: 'T003',
-        qualification: 'M.Sc Biology',
-        experience_years: 5,
-        subjects: ['3', '6', '7'] // Science, Chemistry, Biology
-      },
-      {
-        id: '4',
-        name: 'Robert Kim',
-        email: 'robert.kim@school.edu',
-        phone: '+1-555-0104',
-        employee_id: 'T004',
-        qualification: 'M.A History',
-        experience_years: 12,
-        subjects: ['4'] // History
-      }
-    ];
-
-    setStudents(dummyStudents);
-    setTeachers(dummyTeachers);
-    setIsLoading(false);
+    try {
+      const [studentsData, teachersData] = await Promise.all([
+        dbOperations.getStudents(schoolId),
+        dbOperations.getTeachers(schoolId)
+      ]);
+      
+      // Transform data to match our interface
+      const transformedStudents = studentsData.map((s: any) => ({
+        id: s.id,
+        school_id: s.school_id,
+        name: s.users?.name || '',
+        email: s.users?.email || '',
+        phone: s.users?.phone || '',
+        student_id: s.student_id,
+        class_name: s.class_name,
+        roll_number: s.roll_number,
+        date_of_birth: s.date_of_birth,
+        parent_name: '', // We'll need to fetch parent data separately
+        parent_email: '',
+        parent_phone: ''
+      }));
+      
+      const transformedTeachers = teachersData.map((t: any) => ({
+        id: t.id,
+        school_id: t.school_id,
+        name: t.users?.name || '',
+        email: t.users?.email || '',
+        phone: t.users?.phone || '',
+        employee_id: t.employee_id,
+        qualification: t.qualification,
+        experience_years: t.experience_years,
+        subjects: t.subjects || []
+      }));
+      
+      setStudents(transformedStudents);
+      setTeachers(transformedTeachers);
+    } catch (error) {
+      console.error('Error loading data:', error);
+      alert('Error loading data. Please check your database connection.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleAddStudent = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Validate required fields
-    if (!studentForm.name || !studentForm.email || !studentForm.student_id || 
+    if (!studentForm.name || !studentForm.email || !studentForm.student_id ||
         !studentForm.class_name || !studentForm.roll_number) {
       alert('Please fill in all required fields');
       return;
@@ -202,17 +120,19 @@ export default function StudentTeacherManagement({ onBack }: StudentTeacherManag
       return;
     }
 
-    // Add new student to the list
-    const newStudent: Student = {
-      ...studentForm,
-      id: Date.now().toString() // Simple ID generation for demo
-    };
-    
-    setStudents([...students, newStudent]);
+    setIsLoading(true);
+    try {
+      await dbOperations.addStudent(studentForm);
+      await loadData(); // Reload data to show the new student
+      alert('Student added successfully!');
+    } catch (error) {
+      console.error('Error adding student:', error);
+      alert('Error adding student. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
     setShowAddForm(false);
     resetStudentForm();
-    
-    alert('Student added successfully!');
   };
 
   const handleAddTeacher = async (e: React.FormEvent) => {
@@ -230,24 +150,27 @@ export default function StudentTeacherManagement({ onBack }: StudentTeacherManag
       return;
     }
 
-    // Add new teacher to the list
-    const newTeacher: Teacher = {
-      ...teacherForm,
-      id: Date.now().toString() // Simple ID generation for demo
-    };
-    
-    setTeachers([...teachers, newTeacher]);
+    setIsLoading(true);
+    try {
+      await dbOperations.addTeacher(teacherForm);
+      await loadData(); // Reload data to show the new teacher
+      alert('Teacher added successfully!');
+    } catch (error) {
+      console.error('Error adding teacher:', error);
+      alert('Error adding teacher. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
     setShowAddForm(false);
     resetTeacherForm();
-    
-    alert('Teacher added successfully!');
   };
 
   const resetStudentForm = () => {
     setStudentForm({
+      school_id: schoolId,
       name: '',
       email: '',
-      phone: '',
+      phone: undefined,
       student_id: '',
       class_name: '',
       roll_number: '',
@@ -260,12 +183,13 @@ export default function StudentTeacherManagement({ onBack }: StudentTeacherManag
 
   const resetTeacherForm = () => {
     setTeacherForm({
+      school_id: schoolId,
       name: '',
       email: '',
-      phone: '',
+      phone: undefined,
       employee_id: '',
-      qualification: '',
-      experience_years: 0,
+      qualification: undefined,
+      experience_years: undefined,
       subjects: []
     });
   };
@@ -282,6 +206,12 @@ export default function StudentTeacherManagement({ onBack }: StudentTeacherManag
     teacher.employee_id.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  if (isLoading) {
+    return <div className="flex items-center justify-center min-h-screen">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+    </div>;
+  }
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
@@ -297,13 +227,22 @@ export default function StudentTeacherManagement({ onBack }: StudentTeacherManag
           <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
         </div>
         
-        <button
+        <div className="flex space-x-3">
+          <button
+            onClick={() => setShowBulkUpload(true)}
+            className="flex items-center space-x-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+          >
+            <Upload size={20} />
+            <span>Bulk Upload</span>
+          </button>
+          <button
           onClick={() => setShowAddForm(true)}
           className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
         >
           <Plus size={20} />
           <span>Add {activeTab === 'students' ? 'Student' : 'Teacher'}</span>
         </button>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -345,6 +284,11 @@ export default function StudentTeacherManagement({ onBack }: StudentTeacherManag
       </div>
 
       {/* Content */}
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+      ) : (
       {activeTab === 'students' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredStudents.map((student) => (
@@ -393,7 +337,7 @@ export default function StudentTeacherManagement({ onBack }: StudentTeacherManag
               <p className="text-sm text-gray-600 mb-2">{teacher.email}</p>
               <div className="space-y-1 text-xs text-gray-500">
                 <p>ID: {teacher.employee_id}</p>
-                <p>Experience: {teacher.experience_years} years</p>
+                <p>Experience: {teacher.experience_years || 0} years</p>
                 <p>Qualification: {teacher.qualification}</p>
                 <p>Subjects: {teacher.subjects.map(subjectId => 
                   subjects.find(s => s.id === subjectId)?.name
@@ -402,6 +346,7 @@ export default function StudentTeacherManagement({ onBack }: StudentTeacherManag
             </Card>
           ))}
         </div>
+      )}
       )}
 
       {/* Add Form Modal */}
@@ -455,7 +400,7 @@ export default function StudentTeacherManagement({ onBack }: StudentTeacherManag
                       <input
                         type="tel"
                         value={studentForm.phone}
-                        onChange={(e) => setStudentForm({...studentForm, phone: e.target.value})}
+                        onChange={(e) => setStudentForm({...studentForm, phone: e.target.value || undefined})}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
@@ -608,7 +553,7 @@ export default function StudentTeacherManagement({ onBack }: StudentTeacherManag
                       <input
                         type="tel"
                         value={teacherForm.phone}
-                        onChange={(e) => setTeacherForm({...teacherForm, phone: e.target.value})}
+                        onChange={(e) => setTeacherForm({...teacherForm, phone: e.target.value || undefined})}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
@@ -631,7 +576,7 @@ export default function StudentTeacherManagement({ onBack }: StudentTeacherManag
                       <input
                         type="text"
                         value={teacherForm.qualification}
-                        onChange={(e) => setTeacherForm({...teacherForm, qualification: e.target.value})}
+                        onChange={(e) => setTeacherForm({...teacherForm, qualification: e.target.value || undefined})}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
@@ -643,7 +588,7 @@ export default function StudentTeacherManagement({ onBack }: StudentTeacherManag
                         type="number"
                         min="0"
                         value={teacherForm.experience_years}
-                        onChange={(e) => setTeacherForm({...teacherForm, experience_years: parseInt(e.target.value) || 0})}
+                        onChange={(e) => setTeacherForm({...teacherForm, experience_years: parseInt(e.target.value) || undefined})}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
@@ -702,6 +647,19 @@ export default function StudentTeacherManagement({ onBack }: StudentTeacherManag
             </div>
           </div>
         </div>
+      )}
+
+      {/* Bulk Upload Modal */}
+      {showBulkUpload && (
+        <BulkUpload
+          type={activeTab}
+          schoolId={schoolId}
+          onClose={() => setShowBulkUpload(false)}
+          onSuccess={() => {
+            setShowBulkUpload(false);
+            loadData();
+          }}
+        />
       )}
     </div>
   );
