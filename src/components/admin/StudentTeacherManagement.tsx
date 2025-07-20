@@ -289,7 +289,7 @@ export default function StudentTeacherManagement({ onBack }: StudentTeacherManag
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
         </div>
       ) : (
-      {activeTab === 'students' ? (
+      activeTab === 'students' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredStudents.map((student) => (
             <Card key={student.id || student.student_id} className="p-6">
@@ -346,8 +346,6 @@ export default function StudentTeacherManagement({ onBack }: StudentTeacherManag
             </Card>
           ))}
         </div>
-      )}
-      )}
 
       {/* Add Form Modal */}
       {showAddForm && (
