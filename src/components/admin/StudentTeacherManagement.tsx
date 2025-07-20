@@ -346,6 +346,7 @@ export default function StudentTeacherManagement({ onBack }: StudentTeacherManag
             </Card>
           ))}
         </div>
+      ))}
 
       {/* Add Form Modal */}
       {showAddForm && (
