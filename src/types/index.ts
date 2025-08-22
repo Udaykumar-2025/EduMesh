@@ -6,6 +6,7 @@ export interface User {
   role: 'admin' | 'teacher' | 'parent' | 'student';
   avatar?: string;
   schoolId?: string;
+  isFirstTime?: boolean;
 }
 
 export interface School {
