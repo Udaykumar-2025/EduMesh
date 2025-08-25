@@ -208,7 +208,7 @@ export default function FirstTimeSetup({ onComplete }: FirstTimeSetupProps) {
                     placeholder="info@school.edu"
                   />
                 </div>
-                <div className="md:col-span-2">
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Website (Optional)
                   </label>
