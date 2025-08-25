@@ -11,6 +11,7 @@ export default function FirstTimeSetup({ onComplete }: FirstTimeSetupProps) {
   const [schoolData, setSchoolData] = useState({
     name: '',
     shortName: '',
+    region: '',
     address: '',
     phone: '',
     email: '',
