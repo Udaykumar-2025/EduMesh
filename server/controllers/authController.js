@@ -101,7 +101,7 @@ class AuthController {
         });
       }
 
-      const { name, email, phone, role, schoolCode, schoolName } = req.body;
+      const { name, email, phone, role, region, schoolCode, schoolName } = req.body;
       let schoolId;
 
       // Handle school logic based on role
@@ -129,7 +129,7 @@ class AuthController {
             .insert({
               name: schoolName,
               code: newSchoolCode,
-              region: 'Default Region',
+              region: region || 'Default Region',
               admin_email: email
             })
             .select()
