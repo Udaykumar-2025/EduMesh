@@ -174,6 +174,17 @@ export default function FirstTimeSetup({ onComplete }: FirstTimeSetupProps) {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Region/Area
+                  </label>
+                  <input
+                    value={schoolData.region}
+                    onChange={(e) => setSchoolData({...schoolData, region: e.target.value})}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="School Location"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Phone Number
                   </label>
                   <input
