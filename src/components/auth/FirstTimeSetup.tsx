@@ -12,6 +12,7 @@ export default function FirstTimeSetup({ onComplete }: FirstTimeSetupProps) {
     name: '',
     shortName: '',
     address: '',
+    Region: '',
     phone: '',
     email: '',
     website: '',
