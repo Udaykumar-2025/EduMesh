@@ -67,11 +67,29 @@ export interface School {
 export const dbOperations = {
   // Authentication helpers
   async authenticateUser(schoolCode: string, userId: string) {
+    // For default admin case
+    if (schoolCode === 'default' && userId === 'default-admin') {
+      return {
+        user_id: 'default-admin',
+        name: 'System Administrator',
+        email: 'admin@edumesh.com',
+        phone: '',
+        role: 'admin',
+        school_id: 'default',
+        is_active: true,
+        schools: {
+          name: 'Default School',
+          code: 'default',
+          region: 'System'
+        }
+      }
+    }
+
     const { data: user, error } = await supabase
       .from('users')
       .select(`
         *,
-        schools!users_school_id_fkey(name, code, region)
+        schools(name, code, region)
       `)
       .eq('user_id', userId)
       .eq('is_active', true)
@@ -89,11 +107,24 @@ export const dbOperations = {
   },
 
   async generateUserId(schoolCode: string, role: string) {
-    const { data, error } = await supabase
-      .rpc('generate_user_id', { school_code: schoolCode, user_role: role })
+    // Get the next serial number for this school and role
+    const { data: users, error } = await supabase
+      .from('users')
+      .select('user_id')
+      .like('user_id', `${schoolCode}-${role}-%`)
+      .order('user_id', { ascending: false })
+      .limit(1)
     
     if (error) throw error
-    return data
+    
+    let nextSerial = 1
+    if (users && users.length > 0) {
+      const lastUserId = users[0].user_id
+      const lastSerial = parseInt(lastUserId.split('-')[2])
+      nextSerial = lastSerial + 1
+    }
+    
+    return `${schoolCode}-${role}-${nextSerial.toString().padStart(3, '0')}`
   },
 
   // Students
@@ -102,7 +133,7 @@ export const dbOperations = {
       .from('students')
       .select(`
         *,
-        users!students_user_id_fkey(name, email, phone),
+        users(name, email, phone),
         parent:parent_user_id(name, email, phone)
       `)
       .eq('school_id', schoolId)
@@ -184,8 +215,7 @@ export const dbOperations = {
       .from('teachers')
       .select(`
         *,
-        users!teachers_user_id_fkey(name, email, phone),
-        subjects:subjects(name)
+        users(name, email, phone)
       `)
       .eq('school_id', schoolId)
       .order('created_at', { ascending: false })
