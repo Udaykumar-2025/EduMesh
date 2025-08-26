@@ -9,10 +9,10 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
-// Database types
+// Database types - Updated for new user_id format
 export interface Student {
   id?: string
-  user_id?: string
+  user_id?: string  // Format: schoolcode-role-serialno (e.g., greenwood-student-001)
   school_id: string
   student_id: string
   name: string
@@ -21,16 +21,14 @@ export interface Student {
   class_name: string
   roll_number: string
   date_of_birth?: string
-  parent_name?: string
-  parent_email?: string
-  parent_phone?: string
+  parent_user_id?: string  // References users.user_id instead of separate fields
   created_at?: string
   updated_at?: string
 }
 
 export interface Teacher {
   id?: string
-  user_id?: string
+  user_id?: string  // Format: schoolcode-role-serialno (e.g., greenwood-teacher-001)
   school_id: string
   employee_id: string
   name: string
@@ -43,23 +41,69 @@ export interface Teacher {
   updated_at?: string
 }
 
+export interface User {
+  id: string
+  user_id: string  // Format: schoolcode-role-serialno
+  name: string
+  email: string
+  phone?: string
+  role: 'admin' | 'teacher' | 'parent' | 'student'
+  school_id: string
+  avatar_url?: string
+  is_active: boolean
+  created_at?: string
+  updated_at?: string
+}
+
 export interface School {
   id: string
   name: string
-  code: string
+  code: string  // Used in user_id format (e.g., 'greenwood')
   region: string
   admin_email: string
 }
 
-// Helper functions for database operations
+// Helper functions for database operations - Updated for new schema
 export const dbOperations = {
+  // Authentication helpers
+  async authenticateUser(schoolCode: string, userId: string) {
+    const { data: user, error } = await supabase
+      .from('users')
+      .select(`
+        *,
+        schools!users_school_id_fkey(name, code, region)
+      `)
+      .eq('user_id', userId)
+      .eq('is_active', true)
+      .single()
+    
+    if (error) throw error
+    
+    // Verify school code matches
+    const userSchoolCode = userId.split('-')[0]
+    if (userSchoolCode !== schoolCode) {
+      throw new Error('School ID and User ID do not match')
+    }
+    
+    return user
+  },
+
+  async generateUserId(schoolCode: string, role: string) {
+    const { data, error } = await supabase
+      .rpc('generate_user_id', { school_code: schoolCode, user_role: role })
+    
+    if (error) throw error
+    return data
+  },
+
   // Students
   async getStudents(schoolId: string) {
     const { data, error } = await supabase
       .from('students')
       .select(`
         *,
-        users!students_user_id_fkey(name, email, phone)
+        users!students_user_id_fkey(name, email, phone),
+        parent:parent_user_id(name, email, phone)
       `)
       .eq('school_id', schoolId)
       .order('created_at', { ascending: false })
@@ -69,10 +113,25 @@ export const dbOperations = {
   },
 
   async addStudent(student: Student) {
-    // First create user
+    // Generate user_id if not provided
+    let userId = student.user_id
+    if (!userId) {
+      const { data: school } = await supabase
+        .from('schools')
+        .select('code')
+        .eq('id', student.school_id)
+        .single()
+      
+      if (school) {
+        userId = await this.generateUserId(school.code, 'student')
+      }
+    }
+
+    // Create user record
     const { data: userData, error: userError } = await supabase
       .from('users')
       .insert({
+        user_id: userId,
         name: student.name,
         email: student.email,
         phone: student.phone,
@@ -84,46 +143,22 @@ export const dbOperations = {
 
     if (userError) throw userError
 
-    // Then create student record
+    // Create student record
     const { data: studentData, error: studentError } = await supabase
       .from('students')
       .insert({
-        user_id: userData.id,
+        user_id: userId,
         school_id: student.school_id,
         student_id: student.student_id,
         class_name: student.class_name,
         roll_number: student.roll_number,
         date_of_birth: student.date_of_birth,
-        parent_id: null // We'll handle parent creation separately
+        parent_user_id: student.parent_user_id
       })
       .select()
       .single()
 
     if (studentError) throw studentError
-
-    // Create parent if provided
-    if (student.parent_name && student.parent_email) {
-      const { data: parentData, error: parentError } = await supabase
-        .from('users')
-        .insert({
-          name: student.parent_name,
-          email: student.parent_email,
-          phone: student.parent_phone,
-          role: 'parent',
-          school_id: student.school_id
-        })
-        .select()
-        .single()
-
-      if (!parentError) {
-        // Update student with parent_id
-        await supabase
-          .from('students')
-          .update({ parent_id: parentData.id })
-          .eq('id', studentData.id)
-      }
-    }
-
     return studentData
   },
 
@@ -149,7 +184,8 @@ export const dbOperations = {
       .from('teachers')
       .select(`
         *,
-        users!teachers_user_id_fkey(name, email, phone)
+        users!teachers_user_id_fkey(name, email, phone),
+        subjects:subjects(name)
       `)
       .eq('school_id', schoolId)
       .order('created_at', { ascending: false })
@@ -159,10 +195,25 @@ export const dbOperations = {
   },
 
   async addTeacher(teacher: Teacher) {
-    // First create user
+    // Generate user_id if not provided
+    let userId = teacher.user_id
+    if (!userId) {
+      const { data: school } = await supabase
+        .from('schools')
+        .select('code')
+        .eq('id', teacher.school_id)
+        .single()
+      
+      if (school) {
+        userId = await this.generateUserId(school.code, 'teacher')
+      }
+    }
+
+    // Create user record
     const { data: userData, error: userError } = await supabase
       .from('users')
       .insert({
+        user_id: userId,
         name: teacher.name,
         email: teacher.email,
         phone: teacher.phone,
@@ -174,11 +225,11 @@ export const dbOperations = {
 
     if (userError) throw userError
 
-    // Then create teacher record
+    // Create teacher record
     const { data: teacherData, error: teacherError } = await supabase
       .from('teachers')
       .insert({
-        user_id: userData.id,
+        user_id: userId,
         school_id: teacher.school_id,
         employee_id: teacher.employee_id,
         qualification: teacher.qualification,
@@ -206,6 +257,66 @@ export const dbOperations = {
     }
 
     return { results, errors }
+  },
+
+  // Users
+  async createUser(userData: {
+    user_id?: string
+    name: string
+    email: string
+    phone?: string
+    role: string
+    school_id: string
+  }) {
+    // Generate user_id if not provided
+    let userId = userData.user_id
+    if (!userId) {
+      const { data: school } = await supabase
+        .from('schools')
+        .select('code')
+        .eq('id', userData.school_id)
+        .single()
+      
+      if (school) {
+        userId = await this.generateUserId(school.code, userData.role)
+      }
+    }
+
+    const { data: user, error } = await supabase
+      .from('users')
+      .insert({
+        ...userData,
+        user_id: userId,
+        is_active: true
+      })
+      .select()
+      .single()
+
+    if (error) throw error
+    return user
+  },
+
+  // Schools
+  async createSchool(schoolData: {
+    name: string
+    code: string
+    region?: string
+    admin_email: string
+    address?: string
+    phone?: string
+    website?: string
+  }) {
+    const { data: school, error } = await supabase
+      .from('schools')
+      .insert({
+        ...schoolData,
+        region: schoolData.region || 'Default Region'
+      })
+      .select()
+      .single()
+
+    if (error) throw error
+    return school
   },
 
   // Subjects
