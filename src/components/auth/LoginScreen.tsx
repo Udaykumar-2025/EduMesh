@@ -57,7 +57,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
             </span>
           </div>
           <h1 className="text-3xl font-bold text-white mb-2">Green Wood High International</h1>
-          <p className="text-blue-100">Connect With your School</p>
+          <p className="text-blue-100">Connect With Your School</p>
         </div>
 
         <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 shadow-xl">
