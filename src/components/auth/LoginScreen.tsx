@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ArrowRight, Building, User, Eye, EyeOff } from 'lucide-react';
+import loginBg from '../../assets/Login screen image.png';
 
 interface LoginScreenProps {
   onLogin: (schoolId: string, userId: string) => void;
@@ -40,8 +41,15 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-blue-800 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div
+      className="min-h-screen flex items-center justify-center p-4 bg-cover bg-center relative"
+      style={{
+        backgroundImage: `url(${loginBg})`,
+      }}
+    >
+      {/* Overlay for readability */}
+      <div className="absolute inset-0 bg-blue-900/30" />
+      <div className="relative z-10 w-full max-w-md">
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-white rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg">
             <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
