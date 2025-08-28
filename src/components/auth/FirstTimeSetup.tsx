@@ -11,6 +11,7 @@ export default function FirstTimeSetup({ onComplete }: FirstTimeSetupProps) {
   const [schoolData, setSchoolData] = useState({
     name: '',
     shortName: '',
+    region: '',
     address: '',
     Region: '',
     phone: '',
@@ -173,6 +174,17 @@ export default function FirstTimeSetup({ onComplete }: FirstTimeSetupProps) {
                     placeholder="Complete school address"
                   />
                 </div>
+                 <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Region/Area
+                  </label>
+                  <input
+                    value={schoolData.region}
+                    onChange={(e) => setSchoolData({...schoolData, region: e.target.value})}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="School Location"
+                  />
+                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Region/Area
@@ -208,7 +220,7 @@ export default function FirstTimeSetup({ onComplete }: FirstTimeSetupProps) {
                     placeholder="info@school.edu"
                   />
                 </div>
-                <div className="md:col-span-2">
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Website (Optional)
                   </label>
