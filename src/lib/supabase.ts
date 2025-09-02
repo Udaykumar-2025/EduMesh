@@ -85,7 +85,7 @@ export const dbOperations = {
       }
     }
 
-    const { data: user, error } = await supabase
+    const { data: users, error } = await supabase
       .from('users')
       .select(`
         *,
@@ -93,9 +93,15 @@ export const dbOperations = {
       `)
       .eq('user_id', userId)
       .eq('is_active', true)
-      .single()
+      .limit(1)
     
     if (error) throw error
+    
+    if (!users || users.length === 0) {
+      throw new Error('User not found or inactive')
+    }
+    
+    const user = users[0]
     
     // Verify school code matches
     const userSchoolCode = userId.split('-')[0]
