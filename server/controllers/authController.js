@@ -172,10 +172,53 @@ class AuthController {
         schoolId = school.id;
       }
 
+      // Generate user_id in format: schoolcode-role-serialno
+      const generateUserId = async (schoolId, role) => {
+        // Get school code
+        const { data: school } = await supabase
+          .from('schools')
+          .select('code')
+          .eq('id', schoolId)
+          .single();
+        
+        if (!school) throw new Error('School not found');
+        
+        // Get next serial number for this school and role
+        const { data: existingUsers } = await supabase
+          .from('users')
+          .select('user_id')
+          .eq('school_id', schoolId)
+          .eq('role', role)
+          .order('user_id', { ascending: false });
+        
+        let nextSerial = 1;
+        if (existingUsers && existingUsers.length > 0) {
+          // Extract serial numbers and find the highest
+          const serials = existingUsers
+            .map(user => {
+              const parts = user.user_id.split('-');
+              return parseInt(parts[parts.length - 1]) || 0;
+            })
+            .filter(num => !isNaN(num));
+          
+          if (serials.length > 0) {
+            nextSerial = Math.max(...serials) + 1;
+          }
+        }
+        
+        // Format serial number with leading zeros
+        const serialStr = nextSerial.toString().padStart(3, '0');
+        return `${school.code.toLowerCase()}-${role}-${serialStr}`;
+      };
+
+      // Generate user_id
+      const userId = await generateUserId(schoolId, role);
+
       // Create user
       const { data: user, error: userError } = await supabase
         .from('users')
         .insert({
+          user_id: userId,
           name,
           email,
           phone,
