@@ -70,6 +70,7 @@ export const dbOperations = {
     // For default admin case
     if (schoolCode === 'default' && userId === 'default-admin') {
       return {
+        id: 'default-admin',
         user_id: 'default-admin',
         name: 'System Administrator',
         email: 'admin@edumesh.com',
@@ -77,11 +78,6 @@ export const dbOperations = {
         role: 'admin',
         school_id: 'default',
         is_active: true,
-        schools: {
-          name: 'Default School',
-          code: 'default',
-          region: 'System'
-        }
       }
     }
 
